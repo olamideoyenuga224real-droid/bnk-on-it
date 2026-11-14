@@ -1,177 +1,186 @@
-# Java Banking Application — Final Integration
+# Banking Application — Complete Java Project
 
-## Files
-- `HasMenu.java` — menu contract
-- `User.java` — serializable abstract login/user model
-- `CheckingAccount.java` — checking balance and transactions
-- `SavingsAccount.java` — savings transactions and interest
-- `Customer.java` — customer login, menus, and account report
-- `Admin.java` — default admin login and menu
-- `Bank.java` — application, logins, admin operations, persistence
-- `CustomerList.java` — serializable typed list
-- `Input.java` — shared console input helper (extra utility)
+This is a console Java application based on the supplied UML and assignment requirements. It includes the seven UML classes plus `CustomerList` (serialization wrapper) and `Input` (shared console input).
 
-## Compile and run
-Open a terminal in this folder:
+## Important: upload and run in GitHub Codespaces
+
+**Do not upload only this README or the ZIP without extracting it.**
+
+1. Download `BankingApp_REDO.zip` and extract it on your computer.
+2. In GitHub Codespaces, open the Explorer sidebar. Right-click the **repository root folder** (for example `bkt`) and select **Upload**. Select **all nine `.java` files**, `README.md`, and optionally `run.sh` from the extracted folder. You can also drag the extracted files into the Explorer.
+3. Open a terminal at the folder containing `Bank.java` and run:
 
 ```bash
+ls *.java
 javac *.java
 java Bank
 ```
 
-On Windows PowerShell or Command Prompt, the same commands work when a JDK is installed.
+**Capitalization matters:** `java Bank` works; `java bank` does not.
 
-### Default accounts (testing only)
-| User | PIN | Checking | Savings |
-|---|---|---:|---:|
-| admin | 0000 | n/a | n/a |
-| Alice | 1111 | $1000.00 | $1000.00 |
-| Bob | 2222 | $0.00 | $0.00 |
-| Cindy | 3333 | $0.00 | $0.00 |
+If `javac *.java` reports `file not found`, you're not in the folder containing the Java files. Run `pwd`, `ls`, and `find /workspaces -name Bank.java` to locate them, then `cd` to the containing folder.
 
-Savings interest rate: **5% per application** (one manual admin action, not an annual schedule). Alice's savings changes from $1000 to $1050 after one application.
+Alternative: after uploading the ZIP itself to the repository root, run:
 
-The program automatically creates `customers.dat` on first launch. Future runs reload that data. To reset the sample data after changing serializable class definitions, uncomment the two reset lines in `Bank()` for one run, then comment them out again. **Reset overwrites existing customer data.** Back up `customers.dat` first if needed.
+```bash
+unzip -o BankingApp_REDO.zip
+javac *.java
+java Bank
+```
 
-## Algorithms and pseudocode
+The ZIP intentionally places Java files **at the root**, not in an extra subfolder.
 
-### HasMenu
-1. Require `menu()` to return a string describing menu choices.
-2. Require `start()` to handle the menu loop.
+## Included files
 
-### User constructor and login
-1. Store the username and PIN strings.
-2. For interactive login, prompt for username and PIN.
-3. Compare both entered strings to stored strings.
-4. Return true only when both match.
-5. Provide setters/getters for username and PIN; require subclasses to implement `getReport()`.
+- `HasMenu.java`: menu/start interface
+- `CheckingAccount.java`: balance, deposits, withdrawals
+- `SavingsAccount.java`: checking subclass, 5% interest
+- `User.java`: abstract serializable user, login, name, PIN
+- `Customer.java`: user subclass, checking and savings accounts
+- `Admin.java`: user subclass, menu, default login `admin` / `0000`
+- `Bank.java`: application entry point, menus, logins, reports, adding users, interest, persistence
+- `CustomerList.java`: serializable typed list of customers
+- `Input.java`: input helpers (static Scanner; not stored in serialized objects)
+- `run.sh`: optional compile-and-run helper
 
-### CheckingAccount constructor, menu, start, and transactions
-1. Initialize a nonnegative account balance.
-2. Display checking menu and read a whole-number choice.
-3. If choice is 0, return to the previous menu.
-4. If choice is 1, print formatted balance.
-5. If choice is 2, ask for a positive deposit amount, add it to balance, print result.
-6. If choice is 3, ask for a positive withdrawal amount.
-7. If withdrawal exceeds balance, report insufficient funds; otherwise subtract and print result.
-8. For any other choice, display invalid selection and repeat.
-9. `getBalance()` returns the numeric balance; `getBalanceString()` formats currency.
-10. `setBalance()` rejects negative and non-finite amounts.
+## Sample logins
 
-### SavingsAccount constructor, menu, start, and calcInterest
-1. Initialize inherited balance and interest rate (default 0.05).
-2. Display savings menu and read selection.
-3. Delegate balance, deposit, and withdrawal choices to inherited methods.
-4. Print interest rate for choice 4; return for choice 0.
-5. `calcInterest()`: compute `balance * (1 + interestRate)`; set balance; print updated balance.
-6. `setInterestRate()` rejects negative and non-finite rates.
+| Type | Username | PIN | Starting checking | Starting savings |
+|---|---|---|---|---|
+| Admin | admin | 0000 | — | — |
+| Customer | Alice | 1111 | $1,000.00 | $1,000.00 |
+| Customer | Bob | 2222 | $0.00 | $0.00 |
+| Customer | Cindy | 3333 | $0.00 | $0.00 |
 
-### Customer constructor, menu, start, changePIN, and report
-1. Initialize inherited username and PIN.
-2. Create a checking account and savings account.
-3. Display customer menu and read selection until exit.
-4. For checking or savings choices, invoke that account's `start()` method.
-5. For report, print `getReport()`.
-6. For change PIN, confirm existing PIN, validate new PIN as exactly four digits, then update it.
-7. `getReport()` concatenates username and formatted checking/savings balances.
+On first launch, sample customers are created if `customers.dat` does not exist. Later launches load saved customers. `customers.dat` is created automatically in the current working directory. To reset sample data during testing, delete `customers.dat` before running again (this deletes saved customer changes).
 
-### Admin constructor, menu, start, and report
-1. Set admin username to `admin` and PIN to `0000`.
-2. Return a menu containing exit, full report, add user, and apply interest.
-3. Leave `start()` empty as required; Bank executes the admin actions.
-4. Return admin credentials in `getReport()` for this assignment only.
+## Pseudocode and algorithms
 
-### Bank constructor and main menu
-1. Create one Admin and one CustomerList.
-2. Load saved customers, or initialize and save sample customers if no file exists.
-3. Start the main bank menu.
-4. When the menu ends, save customers.
-5. Main menu loop: show menu, read option, exit on 0.
-6. On 1, authenticate admin; if successful call `startAdmin()`.
-7. On 2, call `loginAsCustomer()`.
-8. Reject invalid selections.
+### Bank constructor
+1. Create an `Admin` with default credentials.
+2. Create an empty `CustomerList`.
+3. Load serialized customers from file; if no file exists, create and save sample customers.
+4. Call the main bank `start()` menu.
+5. Save customer list on exit.
 
-### Bank.startAdmin / adminStart
-1. Print admin's menu and read option in a loop.
-2. On 0, return to main menu.
-3. On 1, invoke `fullCustomerReport()`.
-4. On 2, invoke `addUser()`.
-5. On 3, invoke `applyInterest()`.
-6. Reject invalid options and repeat.
+### Bank menu / start
+1. Print menu: 0 Exit, 1 Admin, 2 Customer.
+2. Read a numeric choice.
+3. On 0, return; on 1, prompt for admin login and, if successful, call `startAdmin()`; on 2, call `loginAsCustomer()`.
+4. For an invalid choice, print a message.
+5. Repeat until exit.
 
-### Bank.fullCustomerReport
-1. Print report heading.
-2. Loop through all customers.
-3. Print each customer's `getReport()` string.
+### Admin constructor / menu / start
+1. Call superclass constructor with `admin` and `0000`.
+2. Menu returns options: exit, report, add user, apply interest.
+3. `start()` intentionally performs no actions; Bank handles admin actions.
+4. `getReport()` returns admin details (not used by Bank).
 
-### Bank.addUser
-1. Ask for new username.
-2. Reject blank username, reserved `admin`, or duplicate usernames.
-3. Ask for a PIN and validate four numeric characters.
-4. Construct a Customer and append to the CustomerList.
-5. Save the list and confirm creation.
+### Bank startAdmin / adminStart
+1. Print the admin menu.
+2. Read a choice.
+3. Exit on 0; call `fullCustomerReport()` on 1; `addUser()` on 2; `applyInterest()` on 3.
+4. Repeat until exit. `adminStart()` is an alias for `startAdmin()`.
 
-### Bank.applyInterest
+### Bank fullCustomerReport
+1. Print a report heading.
+2. For each customer in the list, call `getReport()` and print it.
+
+### Bank addUser
+1. Ask for name; reject empty, reserved, or duplicate names.
+2. Ask for a four-digit PIN; reject invalid input.
+3. Construct a new Customer with zero-balance accounts.
+4. Add customer to list.
+5. Save list and confirm creation.
+
+### Bank applyInterest
 1. Print interest heading.
-2. Loop through all customers.
-3. Call `getSavings().calcInterest()` for each customer.
+2. Loop over customers.
+3. Call `calcInterest()` on each savings account.
 4. Save updated customer list.
 
-### Bank.loginAsCustomer
-1. Prompt for username and PIN once.
-2. Set current customer to null.
-3. Loop through the CustomerList and test `login(username, PIN)`.
-4. If a match is found, store that Customer and stop searching.
-5. If no match is found, print login failure.
-6. Otherwise invoke the matched Customer's `start()` method.
-7. Save changes when the customer returns to the bank menu.
+### Bank loginAsCustomer
+1. Prompt for username and PIN.
+2. Start with no matching customer.
+3. Loop through customers and compare credentials using `login(name,pin)`.
+4. If matched, call that customer's `start()` menu and save on return.
+5. Otherwise print login failure.
 
-### Bank.loadSampleCustomers
-1. Create an empty CustomerList.
-2. Create Alice with PIN 1111; set checking and savings balances to $1000 each.
-3. Add Alice, Bob (PIN 2222), and Cindy (PIN 3333).
+### Bank loadSampleCustomers
+1. Create a fresh CustomerList.
+2. Add Alice with checking and savings each set to 1000.
+3. Add Bob and Cindy with zero balances.
 
-### Bank.saveCustomers
-1. Open a temporary file for object output.
-2. Serialize the entire CustomerList object.
-3. Close the output stream.
-4. Replace the saved data file with the completed temporary file.
-5. If saving fails, print an error.
+### Bank saveCustomers
+1. Open temporary file for serialized output.
+2. Write the CustomerList object.
+3. Close stream.
+4. Move temporary file to `customers.dat`.
+5. Report file errors.
 
-### Bank.loadCustomers
-1. Check whether the saved data file exists.
-2. If it does not, load sample customers and save them.
-3. Otherwise, open object input stream and read one object.
-4. Verify that the object is a CustomerList and assign it to the bank.
-5. On failure, explain the error and stop rather than overwrite existing data.
+### Bank loadCustomers
+1. If no data file exists, load and save sample customers.
+2. Otherwise open serialized input stream.
+3. Read an object and verify it is a CustomerList.
+4. Assign it to Bank's customer list.
+5. If loading fails, report error and do not silently overwrite existing data.
 
-### CustomerList
-1. Extend `ArrayList<Customer>` to provide a named serializable collection type.
+### User constructor / login / setters / getters
+1. Store username and PIN in instance variables.
+2. `login()` prompts for both values, then delegates to `login(name,pin)`.
+3. `login(name,pin)` returns true only when both values match.
+4. Getters return corresponding values; setters replace them.
+5. Subclasses implement abstract `getReport()`.
 
-### Input helper
-1. Keep one static Scanner for console input, outside serializable instances.
-2. Read and trim input lines.
-3. For integers, retry until a valid whole number is entered.
-4. For amounts, retry until a positive finite number is entered.
+### Customer constructor / menu / start
+1. Call User constructor to store credentials.
+2. Construct checking and savings accounts.
+3. Display customer menu in a loop.
+4. On checking or savings selection, call the corresponding account's `start()`.
+5. On report, print `getReport()`; on PIN change, call `changePIN()`; on exit, return.
 
-## Test checklist
-- [ ] First launch creates sample customers and `customers.dat`.
-- [ ] Wrong admin credentials are rejected.
-- [ ] `admin` / `0000` displays admin menu.
-- [ ] Admin report shows Alice $1000/$1000, Bob $0/$0, Cindy $0/$0.
-- [ ] Add Dave with PIN 4444 and confirm he appears in report.
-- [ ] Apply interest once and verify Alice's savings becomes $1050.00.
-- [ ] Login as Alice / 1111 and make a deposit and withdrawal.
-- [ ] Reject a withdrawal larger than available balance.
-- [ ] Reject invalid menu choices and duplicate usernames.
-- [ ] Exit and restart; verify balances and Dave remain saved.
-- [ ] Customer can change PIN after entering current PIN.
+### Customer changePIN / getReport
+1. Ask for existing PIN and verify it.
+2. Ask for a new four-digit PIN and validate it.
+3. Update PIN if valid.
+4. `getReport()` combines username, formatted checking balance, and formatted savings balance.
 
-## Extra effort (clearly marked for rubric)
-- **Input validation:** rejects invalid menu numbers, negative/zero transaction amounts, overdrafts, and duplicate usernames.
-- **Customer PIN change:** customer can update PIN after confirming the current one.
-- **Safer saving:** writes a temporary serialized file before replacing the saved file.
-- **Friendly login messages:** clear success/failure prompts and customer welcome.
+### CheckingAccount constructor / menu / start
+1. Initialize nonnegative balance (default zero).
+2. Loop printing account options.
+3. On balance, call `checkBalance()`; on deposit, call `makeDeposit()`; on withdrawal, call `makeWithdrawal()`; on exit, return.
 
-## Notes
-This is a learning project, not a secure production bank. Passwords/PINs are stored as plaintext in serialized data and admin report can expose the admin PIN; do not use real credentials or real customer data. Money uses `double` to match the supplied UML, though real financial software should use `BigDecimal` or integer cents.
+### CheckingAccount deposit / withdrawal / helpers
+1. Read a positive, finite amount via `getDouble()`.
+2. Deposit adds amount to balance; withdrawal first checks sufficient funds.
+3. Update balance and print formatted balance.
+4. `setBalance()` rejects invalid amounts; `getBalance()` returns balance; `getBalanceString()` formats currency.
+
+### SavingsAccount constructor / menu / start / interest
+1. Call CheckingAccount constructor to initialize balance.
+2. Initialize interest rate to 0.05 unless specified otherwise.
+3. Offer balance, deposit, withdrawal, and interest-rate display.
+4. `calcInterest()` multiplies balance by `(1 + interestRate)` and prints the new balance.
+5. Interest-rate setter validates finite nonnegative rate; getter returns it.
+
+### CustomerList and Input
+1. CustomerList extends `ArrayList<Customer>` and declares a serialization version ID.
+2. Input holds a static Scanner (not serialized), reads text, parses integers, and validates positive money amounts.
+
+## Testing checklist
+
+- [ ] `javac *.java` completes with no compiler errors.
+- [ ] `java Bank` shows Bank Menu.
+- [ ] Admin login accepts `admin` / `0000` and rejects wrong PIN.
+- [ ] Full report shows Alice at $1,000.00 checking and savings.
+- [ ] Add Dave / `4444` through admin menu.
+- [ ] Apply interest once; Alice's savings becomes $1,050.00.
+- [ ] Report shows Dave and updated Alice balance.
+- [ ] Log in as Alice / `1111` and make a deposit and withdrawal.
+- [ ] Exit, rerun `java Bank`, and verify changes persist.
+
+## Personal style and beyond-basics features
+
+Extra work beyond the core UML: friendly confirmation and error messages; four-digit PIN validation; duplicate username prevention; a customer change-PIN option; a savings interest-rate display; checks against negative or non-finite transactions; a temporary-file save to reduce partial writes. These are optional extensions and clearly identified here for the rubric.
+
+This is a classroom demo, **not** secure banking software: PINs are stored as plain text in the serialized file. Do not use real account credentials or customer data.
